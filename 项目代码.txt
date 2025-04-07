@@ -1,0 +1,1234 @@
+// 文件: public\index.html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小熊的贪心算法之旅</title>
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        /* 隐藏全屏按钮 */
+        video::-webkit-media-controls-fullscreen-button {
+            display: none;
+        }
+        video::-moz-full-screen-button {
+            display: none;
+        }
+        video::-ms-fullscreen-button {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="video-container">
+            <video id="video" controls>
+                <source src="videos/lesson.mp4" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+        </div>
+        <div id="interactiveLayer"></div>
+    </div>
+
+    <!-- 组件脚本 -->
+    <script src="js/components/PlantingSimulation.js"></script>
+    <script src="js/components/CodePlayground.js"></script>
+    <script src="js/components/ExerciseInteraction.js"></script>
+    <script src="js/components/AIChat.js"></script>
+    <script src="js/mobile.js"></script>
+    <script>
+        // 初始化移动端应用
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new MobileApp();
+        });
+    </script>
+</body>
+</html> 
+
+// 文件: public\styles\mobile.css
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#video-container {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 宽高比 */
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#interactiveLayer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 200px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* 交互组件通用样式 */
+.interaction-container {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* 关闭按钮样式 */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f44336;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    #app {
+        padding: 10px;
+    }
+    
+    #interactiveLayer {
+        padding: 10px;
+        min-height: 150px;
+    }
+    
+    .interaction-container {
+        padding: 15px;
+    }
+} 
+
+// 文件: public\js\mobile.js
+// 移动端主逻辑
+class MobileApp {
+    constructor() {
+        this.video = document.getElementById('video');
+        this.interactiveLayer = document.getElementById('interactiveLayer');
+        this.isFullscreen = false;
+        
+        // 初始化交互组件
+        this.plantingSimulation = new PlantingSimulation(this.interactiveLayer);
+        this.codePlayground = new CodePlayground(this.interactiveLayer);
+        this.exerciseInteraction = new ExerciseInteraction(this.interactiveLayer);
+        this.aiChat = new AIChat(this.interactiveLayer);
+        
+        // 定义交互触发时间点（秒）
+        this.interactionTriggers = {
+            planting: 60,    // 种植模拟
+            codeEditor: 90,  // 代码编辑器
+            exercise: 120,   // 练习题
+            aiChat: 150     // AI对话
+        };
+        
+        // 跟踪已显示的交互
+        this.shownInteractions = new Set();
+        
+        this.init();
+    }
+
+    init() {
+        // 初始化视频事件监听
+        this.video.addEventListener('timeupdate', () => this.handleVideoTimeUpdate());
+        
+        // 初始化全屏事件监听
+        document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+        document.addEventListener('webkitfullscreenchange', () => this.handleFullscreenChange());
+        
+        // 初始化交互组件
+        this.initInteractions();
+    }
+
+    initInteractions() {
+        // 初始化所有交互组件，但保持隐藏状态
+        this.plantingSimulation.hide();
+        this.codePlayground.hide();
+        this.exerciseInteraction.hide();
+        this.aiChat.hide();
+    }
+
+    handleVideoTimeUpdate() {
+        const currentTime = Math.floor(this.video.currentTime);
+        
+        // 检查是否到达交互触发时间点，且未显示过
+        if (currentTime === this.interactionTriggers.planting && !this.shownInteractions.has('planting')) {
+            this.plantingSimulation.show();
+            this.shownInteractions.add('planting');
+        } else if (currentTime === this.interactionTriggers.codeEditor && !this.shownInteractions.has('codeEditor')) {
+            this.codePlayground.show();
+            this.shownInteractions.add('codeEditor');
+        } else if (currentTime === this.interactionTriggers.exercise && !this.shownInteractions.has('exercise')) {
+            this.exerciseInteraction.show();
+            this.shownInteractions.add('exercise');
+        } else if (currentTime === this.interactionTriggers.aiChat && !this.shownInteractions.has('aiChat')) {
+            this.aiChat.show();
+            this.shownInteractions.add('aiChat');
+        }
+    }
+
+    handleFullscreenChange() {
+        this.isFullscreen = !this.isFullscreen;
+        if (this.isFullscreen) {
+            this.video.requestFullscreen();
+        }
+    }
+}
+
+// 初始化应用
+window.addEventListener('load', () => {
+    new MobileApp();
+}); 
+
+// 文件: public\js\components\PlantingSimulation.js
+class PlantingSimulation {
+    constructor(container) {
+        this.container = container;
+        this.crops = new Map();
+        this.totalLand = 60; // 总土地面积60平米
+        this.usedLand = {    // 每种作物已使用的面积
+            wheat: 0,    // 小麦
+            corn: 0,     // 玉米
+            vegetable: 0 // 青菜
+        };
+        this.totalProfit = 0; // 总收益
+        this.cropData = {
+            wheat: { 
+                profit: 320, 
+                maxArea: 20, 
+                profitPerArea: 16, // 320/20 = 16元/平方米
+                name: '小麦',
+                emoji: '🌾'
+            },
+            corn: { 
+                profit: 180, 
+                maxArea: 15, 
+                profitPerArea: 12, // 180/15 = 12元/平方米
+                name: '玉米',
+                emoji: '🌽'
+            },
+            vegetable: { 
+                profit: 450, 
+                maxArea: 30, 
+                profitPerArea: 15, // 450/30 = 15元/平方米
+                name: '青菜',
+                emoji: '🥬'
+            }
+        };
+        
+        this.initSimulator();
+    }
+
+    initSimulator() {
+        // 创建模拟器容器
+        const simulator = document.createElement('div');
+        simulator.className = 'planting-simulator';
+        simulator.style.cssText = `
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+        `;
+
+        // 修改控制面板样式
+        const controlPanel = document.createElement('div');
+        controlPanel.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        `;
+
+        // 创建作物选择器和面积输入的容器
+        const inputGroup = document.createElement('div');
+        inputGroup.style.cssText = `
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        `;
+
+        // 创建作物选择器
+        const cropSelector = document.createElement('select');
+        cropSelector.style.cssText = `
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            flex: 1;
+        `;
+        
+        // 添加作物选项
+        Object.entries(this.cropData).forEach(([type, data]) => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = `${data.emoji} ${data.name} (¥${data.profitPerArea}/㎡)`;
+            cropSelector.appendChild(option);
+        });
+
+        // 创建面积输入框
+        const areaInput = document.createElement('input');
+        areaInput.type = 'number';
+        areaInput.min = '1';
+        areaInput.value = '1';
+        areaInput.style.cssText = `
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 80px;
+            text-align: center;
+        `;
+
+        // 创建按钮容器
+        const buttonGroup = document.createElement('div');
+        buttonGroup.style.cssText = `
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        `;
+
+        // 创建种植按钮
+        const plantButton = document.createElement('button');
+        plantButton.textContent = '种植';
+        plantButton.style.cssText = `
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+
+        // 创建关闭按钮
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '关闭';
+        closeButton.style.cssText = `
+            padding: 8px 16px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        closeButton.onclick = () => this.hide();
+
+        // 修改信息显示区域样式
+        const infoDisplay = document.createElement('div');
+        infoDisplay.style.cssText = `
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 150px;
+            overflow-y: auto;
+        `;
+
+        // 修改种植区域样式
+        const plantingArea = document.createElement('div');
+        plantingArea.style.cssText = `
+            flex: 1;
+            min-height: 300px;
+            background: #e8f5e9;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 2px;
+            padding: 10px;
+        `;
+
+        // 组装控制面板
+        inputGroup.appendChild(cropSelector);
+        inputGroup.appendChild(areaInput);
+        buttonGroup.appendChild(plantButton);
+        buttonGroup.appendChild(closeButton);
+        controlPanel.appendChild(inputGroup);
+        controlPanel.appendChild(buttonGroup);
+
+        // 组装模拟器
+        simulator.appendChild(controlPanel);
+        simulator.appendChild(infoDisplay);
+        simulator.appendChild(plantingArea);
+        this.container.appendChild(simulator);
+
+        // 保存引用
+        this.simulator = simulator;
+        this.cropSelector = cropSelector;
+        this.areaInput = areaInput;
+        this.plantButton = plantButton;
+        this.infoDisplay = infoDisplay;
+        this.plantingArea = plantingArea;
+
+        // 添加事件监听
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        this.plantButton.onclick = () => this.plantCrop();
+        this.cropSelector.onchange = () => this.updateAreaInput();
+        this.updateInfo();
+    }
+
+    updateAreaInput() {
+        const selectedCrop = this.cropSelector.value;
+        const cropData = this.cropData[selectedCrop];
+        const remainingArea = cropData.maxArea - this.usedLand[selectedCrop];
+        this.areaInput.max = remainingArea;
+        this.areaInput.value = Math.min(parseInt(this.areaInput.value) || 1, remainingArea);
+    }
+
+    plantCrop() {
+        const cropType = this.cropSelector.value;
+        const area = parseInt(this.areaInput.value);
+        const cropData = this.cropData[cropType];
+
+        // 检查总面积限制
+        const totalUsedLand = Object.values(this.usedLand).reduce((a, b) => a + b, 0);
+        if (totalUsedLand + area > this.totalLand) {
+            this.showError(`总种植面积不能超过${this.totalLand}平方米`);
+            return;
+        }
+
+        // 检查作物面积限制
+        if (this.usedLand[cropType] + area > cropData.maxArea) {
+            this.showError(`${cropData.name}的种植面积不能超过${cropData.maxArea}平方米`);
+            return;
+        }
+
+        // 创建作物元素
+        const crop = document.createElement('div');
+        crop.className = 'crop';
+        crop.style.cssText = `
+            background: #81c784;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            transition: all 0.3s;
+            font-size: 24px;
+            padding: 5px;
+        `;
+        crop.textContent = this.cropData[cropType].emoji;
+
+        // 添加面积标签
+        const areaLabel = document.createElement('div');
+        areaLabel.textContent = `${area}㎡`;
+        areaLabel.style.cssText = `
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 4px;
+            border-radius: 2px;
+            z-index: 1;
+        `;
+        crop.appendChild(areaLabel);
+
+        // 添加到种植区域
+        this.plantingArea.appendChild(crop);
+
+        // 更新数据
+        this.usedLand[cropType] += area;
+        this.totalProfit += area * cropData.profitPerArea;
+        this.crops.set(crop, { type: cropType, area });
+
+        // 更新信息显示
+        this.updateInfo();
+
+        // 检查是否是最优种植
+        if (this.checkOptimalPlanting(cropType)) {
+            this.showOptimalFeedback(crop);
+        }
+    }
+
+    checkOptimalPlanting(cropType) {
+        const profitPerArea = this.cropData[cropType].profitPerArea;
+        const maxProfitPerArea = Math.max(...Object.values(this.cropData).map(crop => crop.profitPerArea));
+        return profitPerArea === maxProfitPerArea;
+    }
+
+    showOptimalFeedback(crop) {
+        const feedback = document.createElement('div');
+        feedback.textContent = '最优选择！';
+        feedback.style.cssText = `
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            animation: fadeOut 2s forwards;
+            z-index: 2;
+        `;
+        crop.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 2000);
+    }
+
+    showError(message) {
+        const error = document.createElement('div');
+        error.textContent = message;
+        error.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 1000;
+            animation: fadeOut 2s forwards;
+        `;
+        document.body.appendChild(error);
+        setTimeout(() => error.remove(), 2000);
+    }
+
+    updateInfo() {
+        const totalUsedLand = Object.values(this.usedLand).reduce((a, b) => a + b, 0);
+        this.infoDisplay.innerHTML = `
+            <div style="margin-bottom: 10px;">
+                <strong>土地使用情况：</strong>
+                <span style="color: ${totalUsedLand > this.totalLand ? '#f44336' : '#4CAF50'}">
+                    ${totalUsedLand}/${this.totalLand} 平方米
+                </span>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <strong>总收益：</strong>
+                ¥${this.totalProfit}
+            </div>
+            <div>
+                <strong>作物收益/㎡：</strong>
+                ${Object.entries(this.cropData).map(([type, data]) => `
+                    <div style="margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                        <span style="font-size: 20px;">${data.emoji}</span>
+                        <span>${data.name}: ¥${data.profitPerArea}</span>
+                        <span style="color: ${this.usedLand[type] >= data.maxArea ? '#f44336' : '#4CAF50'}">
+                            (已使用: ${this.usedLand[type]}/${data.maxArea}㎡)
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    show() {
+        this.simulator.style.display = 'flex';
+    }
+
+    hide() {
+        this.simulator.style.display = 'none';
+    }
+} 
+
+// 文件: public\js\components\ExerciseInteraction.js
+class ExerciseInteraction {
+    constructor(container) {
+        this.container = container;
+        this.questions = [
+            {
+                type: "choice",
+                question: "小熊有5元、2元、1元硬币，要买6元的蜂蜜，怎么付钱硬币最少？",
+                options: [
+                    "5元+1元 → 总硬币数2个",
+                    "3个2元 → 总硬币数3个",
+                    "6个1元 → 总硬币数6个"
+                ],
+                answer: 0,
+                explanation: "✅ 正确！贪心策略：每次选择最大面值硬币。5元（剩余1元）→ 1元，共2个硬币。"
+            },
+            {
+                type: "trueFalse",
+                question: "贪心算法在所有问题中都能得到最优解。",
+                answer: false,
+                explanation: "❌ 错误！贪心算法只在特定条件下有效，例如硬币面值符合贪心条件时才适用"
+            },
+            {
+                type: "choice",
+                question: "小熊要分蛋糕给朋友们，如何分配才能让最多朋友吃饱？",
+                options: ["优先满足胃口大的朋友", "优先满足胃口小的朋友", "随机分配"],
+                answer: 1,
+                explanation: "🍰 正确！贪心策略：先满足小胃口朋友 → 可以分给更多人"
+            }
+        ];
+        this.currentQuestions = [];
+        this.userAnswers = [];
+        this.isActive = false;
+        this.hasCompletedQuiz = false;
+        this.lastScore = 0;
+        
+        this.initExercise();
+    }
+
+    initExercise() {
+        // 创建习题容器
+        this.exerciseContainer = document.createElement('div');
+        this.exerciseContainer.style.cssText = `
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        `;
+
+        // 创建标题
+        const title = document.createElement('div');
+        title.style.cssText = `
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ECDC4;
+            margin-bottom: 20px;
+            text-align: center;
+        `;
+        title.textContent = '🐻小熊的贪心算法大挑战🐰';
+        this.exerciseContainer.appendChild(title);
+
+        // 创建问题容器
+        this.questionsContainer = document.createElement('div');
+        this.questionsContainer.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        `;
+        this.exerciseContainer.appendChild(this.questionsContainer);
+
+        // 创建提交按钮
+        const submitButton = document.createElement('button');
+        submitButton.style.cssText = `
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            align-self: center;
+        `;
+        submitButton.textContent = '提交答案';
+        submitButton.onclick = () => this.submitAnswers();
+        this.exerciseContainer.appendChild(submitButton);
+
+        this.container.appendChild(this.exerciseContainer);
+    }
+
+    show() {
+        this.exerciseContainer.style.display = 'flex';
+        this.startQuiz();
+    }
+
+    hide() {
+        this.exerciseContainer.style.display = 'none';
+    }
+
+    startQuiz() {
+        this.currentQuestions = [...this.questions].sort(() => Math.random() - 0.5).slice(0, 3);
+        this.userAnswers = new Array(3).fill(null);
+        this.hasCompletedQuiz = false;
+        this.showQuestions();
+    }
+
+    showQuestions() {
+        this.questionsContainer.innerHTML = '';
+        this.currentQuestions.forEach((q, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.style.cssText = `
+                margin-bottom: 20px;
+                padding: 15px;
+                background: #f5f5f5;
+                border-radius: 8px;
+            `;
+
+            const questionText = document.createElement('div');
+            questionText.style.cssText = `
+                font-size: 18px;
+                margin-bottom: 15px;
+                color: #333;
+            `;
+            questionText.textContent = `${index + 1}. ${q.question}`;
+            questionDiv.appendChild(questionText);
+
+            if (q.type === "choice") {
+                q.options.forEach((opt, i) => {
+                    const option = document.createElement('div');
+                    option.style.cssText = `
+                        padding: 10px;
+                        margin: 5px 0;
+                        background: white;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: background 0.3s;
+                    `;
+                    option.textContent = opt;
+                    option.onclick = () => this.selectAnswer(index, i);
+                    questionDiv.appendChild(option);
+                });
+            } else {
+                const trueOption = document.createElement('div');
+                trueOption.style.cssText = `
+                    padding: 10px;
+                    margin: 5px 0;
+                    background: white;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                `;
+                trueOption.textContent = '✅ 对';
+                trueOption.onclick = () => this.selectAnswer(index, true);
+                questionDiv.appendChild(trueOption);
+
+                const falseOption = document.createElement('div');
+                falseOption.style.cssText = `
+                    padding: 10px;
+                    margin: 5px 0;
+                    background: white;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                `;
+                falseOption.textContent = '❌ 错';
+                falseOption.onclick = () => this.selectAnswer(index, false);
+                questionDiv.appendChild(falseOption);
+            }
+
+            this.questionsContainer.appendChild(questionDiv);
+        });
+    }
+
+    selectAnswer(qIndex, answer) {
+        this.userAnswers[qIndex] = answer;
+        const questionDiv = this.questionsContainer.children[qIndex];
+        const options = questionDiv.querySelectorAll('div');
+        options.forEach(opt => {
+            opt.style.background = 'white';
+        });
+        options[answer + 1].style.background = '#e3f2fd';
+    }
+
+    submitAnswers() {
+        if (this.userAnswers.includes(null)) {
+            alert('请先完成所有题目哦！');
+            return;
+        }
+
+        let score = 0;
+        this.currentQuestions.forEach((q, index) => {
+            const isCorrect = q.type === "choice" 
+                ? this.userAnswers[index] === q.answer 
+                : this.userAnswers[index] === q.answer;
+            if (isCorrect) score++;
+
+            const questionDiv = this.questionsContainer.children[index];
+            const explanation = document.createElement('div');
+            explanation.style.cssText = `
+                margin-top: 10px;
+                padding: 10px;
+                background: ${isCorrect ? '#e8f5e9' : '#ffebee'};
+                border-radius: 4px;
+                color: ${isCorrect ? '#2e7d32' : '#c62828'};
+            `;
+            explanation.textContent = q.explanation;
+            questionDiv.appendChild(explanation);
+        });
+
+        this.lastScore = score;
+        this.hasCompletedQuiz = true;
+
+        const resultDiv = document.createElement('div');
+        resultDiv.style.cssText = `
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            text-align: center;
+        `;
+        resultDiv.innerHTML = `
+            <div style="font-size: 20px; margin-bottom: 10px;">得分：${score}分 ${"⭐".repeat(score)}</div>
+            <div style="color: #666;">正确率：${((score / 3) * 100).toFixed(0)}%</div>
+        `;
+        this.questionsContainer.appendChild(resultDiv);
+    }
+} 
+
+// 文件: public\js\components\CodePlayground.js
+class CodePlayground {
+    constructor(container) {
+        this.container = container;
+        this.currentLanguage = 'javascript';
+        this.currentTheme = 'dark';
+        this.initEditor();
+    }
+
+    initEditor() {
+        // 创建编辑器容器
+        this.editorContainer = document.createElement('div');
+        this.editorContainer.style.cssText = `
+            width: 100%;
+            background: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        `;
+
+        // 创建工具栏
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText = `
+            padding: 10px;
+            background: #1e1e1e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #444;
+        `;
+
+        // 创建语言选择器
+        const languageSelect = document.createElement('select');
+        languageSelect.style.cssText = `
+            padding: 8px;
+            background: #3d3d3d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        const languages = [
+            { value: 'javascript', name: 'JavaScript' },
+            { value: 'python', name: 'Python' },
+            { value: 'cpp', name: 'C++' }
+        ];
+        languages.forEach(lang => {
+            const option = document.createElement('option');
+            option.value = lang.value;
+            option.textContent = lang.name;
+            languageSelect.appendChild(option);
+        });
+        languageSelect.value = this.currentLanguage;
+        languageSelect.onchange = () => {
+            this.currentLanguage = languageSelect.value;
+            this.codeArea.value = this.getDefaultCode(this.currentLanguage);
+            this.adjustCodeAreaHeight();
+        };
+        toolbar.appendChild(languageSelect);
+
+        // 创建运行按钮
+        const runButton = document.createElement('button');
+        runButton.style.cssText = `
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        runButton.textContent = '运行';
+        runButton.onclick = () => this.executeCode();
+        toolbar.appendChild(runButton);
+
+        // 创建关闭按钮
+        const closeButton = document.createElement('button');
+        closeButton.style.cssText = `
+            margin-left: auto;
+            padding: 8px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        closeButton.textContent = '×';
+        closeButton.onclick = () => this.hide();
+        toolbar.appendChild(closeButton);
+
+        this.editorContainer.appendChild(toolbar);
+
+        // 创建代码区域
+        this.codeArea = document.createElement('textarea');
+        this.codeArea.style.cssText = `
+            padding: 15px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 4;
+            min-height: 200px;
+            overflow-y: auto;
+        `;
+        this.codeArea.value = this.getDefaultCode(this.currentLanguage);
+        this.codeArea.addEventListener('input', () => this.adjustCodeAreaHeight());
+        this.editorContainer.appendChild(this.codeArea);
+
+        // 创建输出区域
+        this.outputArea = document.createElement('div');
+        this.outputArea.style.cssText = `
+            padding: 15px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-top: 1px solid #444;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        `;
+        this.editorContainer.appendChild(this.outputArea);
+
+        this.container.appendChild(this.editorContainer);
+        this.adjustCodeAreaHeight();
+    }
+
+    adjustCodeAreaHeight() {
+        const lineHeight = 21; // 14px font-size * 1.5 line-height
+        const minHeight = 200;
+        const padding = 30; // 15px top + 15px bottom
+        const lines = this.codeArea.value.split('\n').length;
+        const newHeight = Math.max(minHeight, lines * lineHeight + padding);
+        this.codeArea.style.height = `${newHeight}px`;
+    }
+
+    getDefaultCode(language) {
+        switch (language) {
+            case 'javascript':
+                return `// 计算矩形面积
+function calculateArea(width, height) {
+    console.log("计算过程：");
+    console.log("宽度 =", width);
+    console.log("高度 =", height);
+    const area = width * height;
+    console.log("面积 =", area);
+    return { area: area };
+}
+
+// 测试代码
+const result = calculateArea(5, 3);
+console.log("返回结果：", result);`;
+            case 'python':
+                return `# 计算矩形面积
+def calculate_area(width, height):
+    print("计算过程：")
+    print("宽度 =", width)
+    print("高度 =", height)
+    area = width * height
+    print("面积 =", area)
+    return {"area": area}
+
+# 测试代码
+result = calculate_area(5, 3)
+print("返回结果：", result)`;
+            case 'cpp':
+                return `// 计算矩形面积
+#include <iostream>
+using namespace std;
+
+struct Result {
+    int area;
+};
+
+Result calculateArea(int width, int height) {
+    cout << "计算过程：" << endl;
+    cout << "宽度 = " << width << endl;
+    cout << "高度 = " << height << endl;
+    int area = width * height;
+    cout << "面积 = " << area << endl;
+    return {area};
+}
+
+int main() {
+    Result result = calculateArea(5, 3);
+    cout << "返回结果：面积 = " << result.area << endl;
+    return 0;
+}`;
+            default:
+                return '';
+        }
+    }
+
+    executeCode() {
+        const code = this.codeArea.value;
+        this.outputArea.innerHTML = '';
+
+        try {
+            // 创建一个安全的执行环境
+            const safeEval = new Function(`
+                let console = {
+                    log: (...args) => {
+                        window._lastConsoleOutput = args.map(arg => 
+                            typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+                        ).join(' ');
+                    }
+                };
+                try {
+                    ${code}
+                    return window._lastConsoleOutput;
+                } catch (e) {
+                    throw new Error(e.message);
+                }
+            `);
+
+            // 执行代码
+            const result = safeEval();
+            
+            // 显示执行结果
+            this.outputArea.innerHTML = `
+                <div style="color: #4CAF50;">执行成功！</div>
+                <div style="margin-top: 10px;">输出：</div>
+                <div style="white-space: pre-wrap;">${result}</div>
+            `;
+        } catch (error) {
+            this.outputArea.innerHTML = `
+                <div style="color: #f44336;">执行错误：</div>
+                <div style="margin-top: 10px; color: #ff9800;">${error.message}</div>
+            `;
+        }
+    }
+
+    show() {
+        this.editorContainer.style.display = 'flex';
+        this.codeArea.focus();
+    }
+
+    hide() {
+        this.editorContainer.style.display = 'none';
+    }
+} 
+
+// 文件: public\js\components\AIChat.js
+class AIChat {
+    constructor(container) {
+        this.container = container;
+        this.messages = [];
+        this.initChat();
+    }
+
+    initChat() {
+        // 创建聊天容器
+        this.chatContainer = document.createElement('div');
+        this.chatContainer.style.cssText = `
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        `;
+
+        // 创建标题
+        const title = document.createElement('div');
+        title.style.cssText = `
+            font-size: 24px;
+            font-weight: bold;
+            color: #0078ff;
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        `;
+        title.innerHTML = '<span>🤖</span> AI智能助手';
+        this.chatContainer.appendChild(title);
+
+        // 创建消息区域
+        this.messagesArea = document.createElement('div');
+        this.messagesArea.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            min-height: 200px;
+            max-height: 400px;
+        `;
+        this.chatContainer.appendChild(this.messagesArea);
+
+        // 创建输入区域
+        const inputArea = document.createElement('div');
+        inputArea.style.cssText = `
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        `;
+
+        // 创建输入框
+        this.inputField = document.createElement('input');
+        this.inputField.style.cssText = `
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+        `;
+        this.inputField.placeholder = '输入你的问题...';
+        this.inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
+            }
+        });
+        inputArea.appendChild(this.inputField);
+
+        // 创建发送按钮
+        const sendButton = document.createElement('button');
+        sendButton.style.cssText = `
+            padding: 12px 24px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        `;
+        sendButton.textContent = '发送';
+        sendButton.onclick = () => this.sendMessage();
+        inputArea.appendChild(sendButton);
+
+        this.chatContainer.appendChild(inputArea);
+        this.container.appendChild(this.chatContainer);
+    }
+
+    show() {
+        this.chatContainer.style.display = 'flex';
+        this.inputField.focus();
+    }
+
+    hide() {
+        this.chatContainer.style.display = 'none';
+    }
+
+    async sendMessage() {
+        const message = this.inputField.value.trim();
+        if (!message) return;
+
+        // 清空输入框
+        this.inputField.value = '';
+
+        // 添加用户消息
+        this.addMessage(message, 'user');
+
+        // 显示AI思考中
+        const thinkingMsg = this.addMessage('思考中...', 'ai', true);
+
+        try {
+            // 调用AI API
+            const response = await this.callAIAPI(message);
+            
+            // 移除思考中消息
+            thinkingMsg.remove();
+            
+            // 添加AI回复
+            this.addMessage(response, 'ai');
+        } catch (error) {
+            // 移除思考中消息
+            thinkingMsg.remove();
+            
+            // 显示错误消息
+            this.addMessage('抱歉，出现了一些问题，请稍后再试。', 'ai');
+            console.error('AI API调用失败:', error);
+        }
+    }
+
+    addMessage(text, type, isThinking = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = `
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+            align-self: ${type === 'user' ? 'flex-end' : 'flex-start'};
+            background: ${type === 'user' ? '#0078ff' : '#f0f0f0'};
+            color: ${type === 'user' ? 'white' : '#333'};
+            font-style: ${isThinking ? 'italic' : 'normal'};
+        `;
+        messageDiv.textContent = text;
+        this.messagesArea.appendChild(messageDiv);
+        this.messagesArea.scrollTop = this.messagesArea.scrollHeight;
+        return messageDiv;
+    }
+
+    async callAIAPI(message) {
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+
+            if (!response.ok) {
+                throw new Error('API请求失败');
+            }
+
+            const data = await response.json();
+            return data.response;
+        } catch (error) {
+            console.error('AI API调用失败:', error);
+            throw error;
+        }
+    }
+} 
+

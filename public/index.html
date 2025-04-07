@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小熊的贪心算法之旅</title>
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        /* 隐藏全屏按钮 */
+        video::-webkit-media-controls-fullscreen-button {
+            display: none;
+        }
+        video::-moz-full-screen-button {
+            display: none;
+        }
+        video::-ms-fullscreen-button {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="video-container">
+            <video id="video" controls>
+                <source src="videos/lesson.mp4" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+        </div>
+        <div id="interactiveLayer"></div>
+    </div>
+
+    <!-- 组件脚本 -->
+    <script src="js/components/PlantingSimulation.js"></script>
+    <script src="js/components/CodePlayground.js"></script>
+    <script src="js/components/ExerciseInteraction.js"></script>
+    <script src="js/components/AIChat.js"></script>
+    <script src="js/mobile.js"></script>
+    <script>
+        // 初始化移动端应用
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new MobileApp();
+        });
+    </script>
+</body>
+</html> 
