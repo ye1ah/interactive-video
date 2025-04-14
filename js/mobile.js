@@ -235,7 +235,4 @@ class MobileApp {
     }
 }
 
-// 初始化应用
-window.addEventListener('load', () => {
-    new MobileApp();
-}); 
+// 删除这里的初始化代码，因为已经在index.html中初始化了

@@ -125,7 +125,7 @@ class PlantingPlan {
     handleOptionSelect(optionId) {
         this.selectedOption = optionId;
         const options = this.element.querySelectorAll('.option');
-        const video = document.getElementById('video');
+        const video = document.getElementById('lesson-video');
         
         options.forEach(option => {
             if (option.id === optionId) {
@@ -139,7 +139,6 @@ class PlantingPlan {
                     this.feedback.style.color = '#4CAF50';
                     
                     setTimeout(() => {
-                        this.hide();
                         video.play();
                     }, 2000);
                 } else {

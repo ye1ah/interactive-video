@@ -164,9 +164,12 @@
     <script src="js/components/AIChat.js"></script>
     <script src="js/mobile.js"></script>
     <script>
-        // 初始化移动端应用
+        // 使用一个全局变量来确保只初始化一次
+        let app;
         document.addEventListener('DOMContentLoaded', () => {
-            const app = new MobileApp();
+            if (!app) {
+                app = new MobileApp();
+            }
         });
     </script>
 </body>
