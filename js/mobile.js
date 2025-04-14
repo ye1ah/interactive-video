@@ -1,9 +1,22 @@
 // 移动端主逻辑
 class MobileApp {
     constructor() {
-        this.video = document.getElementById('video');
+        this.video = document.getElementById('lesson-video');
         this.interactiveLayer = document.getElementById('interactiveLayer');
+        this.loadingSpinner = document.querySelector('.loading-spinner');
+        this.networkStatus = document.querySelector('.network-status');
         this.isFullscreen = false;
+        this.retryCount = 0;
+        this.maxRetries = 3;
+        
+        // 网络状态监听
+        this.setupNetworkMonitoring();
+        
+        // 添加视频事件监听
+        this.setupVideoEventListeners();
+        
+        // 预加载设置
+        this.video.preload = 'metadata';
         
         // 初始化交互组件
         this.plantingStrategy = new PlantingStrategy(this.interactiveLayer);
@@ -98,17 +111,127 @@ class MobileApp {
         }
     }
 
+    setupNetworkMonitoring() {
+        window.addEventListener('online', () => {
+            this.networkStatus.style.display = 'none';
+            if (this.video.paused && this.video.currentTime > 0) {
+                this.retryVideoLoad();
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            this.networkStatus.style.display = 'block';
+        });
+    }
+
+    setupVideoEventListeners() {
+        this.video.addEventListener('loadstart', () => this.handleLoadStart());
+        this.video.addEventListener('waiting', () => this.handleWaiting());
+        this.video.addEventListener('canplay', () => this.handleCanPlay());
+        this.video.addEventListener('error', (e) => this.handleVideoError(e));
+        this.video.addEventListener('stalled', () => this.handleVideoStalled());
+        this.video.addEventListener('timeupdate', () => this.handleTimeUpdate());
+        this.video.addEventListener('progress', () => this.handleProgress());
+    }
+
+    handleLoadStart() {
+        this.loadingSpinner.style.display = 'block';
+        document.getElementById('video-container').classList.add('loading');
+        console.log('视频开始加载');
+    }
+
+    handleWaiting() {
+        this.loadingSpinner.style.display = 'block';
+        document.getElementById('video-container').classList.add('loading');
+    }
+
+    handleCanPlay() {
+        this.loadingSpinner.style.display = 'none';
+        document.getElementById('video-container').classList.remove('loading');
+        this.retryCount = 0; // 重置重试计数
+        console.log('视频可以播放');
+    }
+
+    handleProgress() {
+        // 检查视频缓冲进度
+        if (this.video.buffered.length > 0) {
+            const bufferedEnd = this.video.buffered.end(this.video.buffered.length - 1);
+            const duration = this.video.duration;
+            console.log(`已缓冲: ${Math.round((bufferedEnd / duration) * 100)}%`);
+        }
+    }
+
     handleVideoError(e) {
-        console.error('视频加载错误:', e);
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'error-message';
-        errorMessage.textContent = '视频加载失败，请刷新页面重试';
-        this.video.parentNode.appendChild(errorMessage);
+        this.loadingSpinner.style.display = 'none';
+        const error = this.video.error;
+        let message = '视频播放出错';
+        
+        switch (error.code) {
+            case 1:
+                message = '视频加载被中断';
+                break;
+            case 2:
+                message = '网络错误导致视频下载失败';
+                break;
+            case 3:
+                message = '视频解码失败';
+                break;
+            case 4:
+                message = '视频格式不支持';
+                break;
+        }
+        
+        console.error('视频错误:', message);
+        
+        // 显示错误信息
+        const errorDisplay = document.createElement('div');
+        errorDisplay.className = 'video-error-message';
+        errorDisplay.textContent = message;
+        
+        // 添加重试按钮
+        const retryButton = document.createElement('button');
+        retryButton.textContent = '重试';
+        retryButton.onclick = () => this.retryVideoLoad();
+        errorDisplay.appendChild(retryButton);
+        
+        this.video.parentNode.appendChild(errorDisplay);
     }
 
     handleVideoStalled() {
-        console.log('视频加载停滞，尝试重新加载...');
+        console.log('视频加载停滞');
+        this.loadingSpinner.style.display = 'block';
+        
+        if (this.retryCount < this.maxRetries) {
+            this.retryVideoLoad();
+        } else {
+            this.networkStatus.textContent = '视频加载失败，请检查网络连接';
+            this.networkStatus.style.display = 'block';
+        }
+    }
+
+    retryVideoLoad() {
+        this.retryCount++;
+        console.log(`尝试重新加载视频（第 ${this.retryCount} 次）`);
+        
+        // 移除现有的错误消息
+        const errorMessage = document.querySelector('.video-error-message');
+        if (errorMessage) {
+            errorMessage.remove();
+        }
+        
+        // 记住当前播放位置
+        const currentTime = this.video.currentTime;
+        
+        // 重新加载视频
         this.video.load();
+        
+        // 恢复播放位置
+        this.video.currentTime = currentTime;
+        
+        // 如果之前在播放，则继续播放
+        if (!this.video.paused) {
+            this.video.play().catch(e => console.error('重新播放失败:', e));
+        }
     }
 }
 

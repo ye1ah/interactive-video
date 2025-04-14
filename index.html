@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
     <title>小熊的贪心算法之旅</title>
     <link rel="stylesheet" href="styles/mobile.css">
     <style>
@@ -16,14 +20,136 @@
         video::-ms-fullscreen-button {
             display: none;
         }
+        
+        /* 视频容器响应式样式 */
+        #video-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        /* 视频元素响应式样式 */
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* 当视频正在加载时的容器样式 */
+        #video-container.loading {
+            background: #000;
+            min-height: 200px;
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* 错误消息样式 */
+        .video-error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        /* 网络状态提示 */
+        .network-status {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: #ff4444;
+            color: white;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+        
+        /* 响应式布局 */
+        @media screen and (max-width: 768px) {
+            #video-container {
+                margin-top: 0;
+            }
+            
+            #interactiveLayer {
+                padding: 15px;
+                margin-bottom: 60px;
+            }
+
+            .video-error-message {
+                width: 80%;
+                font-size: 14px;
+            }
+        }
+
+        @media screen and (min-width: 769px) {
+            #video-container {
+                max-width: 1280px;
+                margin: 20px auto;
+            }
+
+            #interactiveLayer {
+                max-width: 1280px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            button, 
+            .interactive-option {
+                min-height: 44px;
+                padding: 12px 20px;
+            }
+        }
+
+        /* 禁用双击缩放 */
+        * { 
+            touch-action: manipulation;
+        }
     </style>
 </head>
 <body>
     <div id="app">
+        <div class="network-status">网络连接不稳定，正在重试...</div>
         <div id="video-container">
-            <video id="video" controls preload="auto">
+            <div class="loading-spinner"></div>
+            <video id="lesson-video" class="video-js" controls
+                   poster="images/video-poster.jpg" preload="auto">
+                <source src="videos/lesson_compressed.mp4" type="video/mp4">
                 <source src="videos/lesson_h264.mp4" type="video/mp4">
-                您的浏览器不支持视频播放。
+                <source src="videos/lesson.webm" type="video/webm">
+                <p class="vjs-no-js">
+                    要观看此视频，请启用 JavaScript，并考虑升级到支持 HTML5 视频的浏览器。
+                </p>
             </video>
         </div>
         <div id="interactiveLayer"></div>
