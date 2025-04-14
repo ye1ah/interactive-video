@@ -28,6 +28,8 @@ class MobileApp {
     init() {
         // 初始化视频事件监听
         this.video.addEventListener('timeupdate', () => this.handleVideoTimeUpdate());
+        this.video.addEventListener('error', (e) => this.handleVideoError(e));
+        this.video.addEventListener('stalled', () => this.handleVideoStalled());
         
         // 初始化全屏事件监听
         document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
@@ -69,6 +71,19 @@ class MobileApp {
         if (this.isFullscreen) {
             this.video.requestFullscreen();
         }
+    }
+
+    handleVideoError(e) {
+        console.error('视频加载错误:', e);
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error-message';
+        errorMessage.textContent = '视频加载失败，请刷新页面重试';
+        this.video.parentNode.appendChild(errorMessage);
+    }
+
+    handleVideoStalled() {
+        console.log('视频加载停滞，尝试重新加载...');
+        this.video.load();
     }
 }
 
