@@ -37,6 +37,10 @@ class CodePlayground {
         languageSelector.style.cssText = `
             margin-bottom: 15px;
             text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
         `;
 
         const languageLabel = document.createElement('span');
@@ -44,42 +48,52 @@ class CodePlayground {
         languageLabel.style.cssText = `
             margin-right: 10px;
             font-weight: bold;
+            width: 100%;
+        `;
+
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.style.cssText = `
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
         `;
 
         const pythonButton = document.createElement('button');
         pythonButton.textContent = 'Python';
         pythonButton.style.cssText = `
             padding: 5px 15px;
-            margin: 0 5px;
             border: 2px solid #4CAF50;
             border-radius: 4px;
             background: white;
             cursor: pointer;
             transition: all 0.3s ease;
+            min-width: 100px;
         `;
 
         const cppButton = document.createElement('button');
         cppButton.textContent = 'C++';
         cppButton.style.cssText = `
             padding: 5px 15px;
-            margin: 0 5px;
             border: 2px solid #ddd;
             border-radius: 4px;
             background: white;
             cursor: pointer;
             transition: all 0.3s ease;
+            min-width: 100px;
         `;
 
         const jsButton = document.createElement('button');
         jsButton.textContent = 'JavaScript';
         jsButton.style.cssText = `
             padding: 5px 15px;
-            margin: 0 5px;
             border: 2px solid #ddd;
             border-radius: 4px;
             background: white;
             cursor: pointer;
             transition: all 0.3s ease;
+            min-width: 100px;
         `;
 
         pythonButton.addEventListener('click', () => this.switchLanguage('python', pythonButton, cppButton, jsButton));
@@ -87,9 +101,10 @@ class CodePlayground {
         jsButton.addEventListener('click', () => this.switchLanguage('javascript', pythonButton, cppButton, jsButton));
 
         languageSelector.appendChild(languageLabel);
-        languageSelector.appendChild(pythonButton);
-        languageSelector.appendChild(cppButton);
-        languageSelector.appendChild(jsButton);
+        buttonsContainer.appendChild(pythonButton);
+        buttonsContainer.appendChild(cppButton);
+        buttonsContainer.appendChild(jsButton);
+        languageSelector.appendChild(buttonsContainer);
 
         // 代码编辑器
         this.codeEditor = document.createElement('textarea');
