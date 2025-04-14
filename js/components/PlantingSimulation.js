@@ -45,7 +45,7 @@ class PlantingSimulation {
             height: 100%;
             background: #f5f5f5;
             border-radius: 8px;
-            display: flex;
+            display: none;
             flex-direction: column;
             padding: 20px;
             box-sizing: border-box;

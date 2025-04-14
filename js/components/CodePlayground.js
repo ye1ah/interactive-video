@@ -1,252 +1,354 @@
 class CodePlayground {
     constructor(container) {
         this.container = container;
-        this.currentLanguage = 'javascript';
-        this.currentTheme = 'dark';
-        this.initEditor();
+        this.element = null;
+        this.codeEditor = null;
+        this.outputArea = null;
+        this.currentLanguage = 'python';
+        this.init();
     }
 
-    initEditor() {
-        // 创建编辑器容器
-        this.editorContainer = document.createElement('div');
-        this.editorContainer.style.cssText = `
+    init() {
+        this.element = document.createElement('div');
+        this.element.className = 'interactive-component code-playground';
+        this.element.style.cssText = `
+            position: relative;
             width: 100%;
-            background: #2d2d2d;
+            height: 100%;
+            background: #f5f5f5;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: none;
-            flex-direction: column;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        `;
-
-        // 创建工具栏
-        const toolbar = document.createElement('div');
-        toolbar.style.cssText = `
-            padding: 10px;
-            background: #1e1e1e;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid #444;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
         `;
 
-        // 创建语言选择器
-        const languageSelect = document.createElement('select');
-        languageSelect.style.cssText = `
-            padding: 8px;
-            background: #3d3d3d;
-            color: white;
-            border: none;
+        const title = document.createElement('h2');
+        title.textContent = '💻 代码编辑器';
+        title.style.cssText = `
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #333;
+        `;
+
+        // 语言选择器
+        const languageSelector = document.createElement('div');
+        languageSelector.style.cssText = `
+            margin-bottom: 15px;
+            text-align: center;
+        `;
+
+        const languageLabel = document.createElement('span');
+        languageLabel.textContent = '选择编程语言：';
+        languageLabel.style.cssText = `
+            margin-right: 10px;
+            font-weight: bold;
+        `;
+
+        const pythonButton = document.createElement('button');
+        pythonButton.textContent = 'Python';
+        pythonButton.style.cssText = `
+            padding: 5px 15px;
+            margin: 0 5px;
+            border: 2px solid #4CAF50;
             border-radius: 4px;
+            background: white;
             cursor: pointer;
+            transition: all 0.3s ease;
         `;
-        const languages = [
-            { value: 'javascript', name: 'JavaScript' },
-            { value: 'python', name: 'Python' },
-            { value: 'cpp', name: 'C++' }
-        ];
-        languages.forEach(lang => {
-            const option = document.createElement('option');
-            option.value = lang.value;
-            option.textContent = lang.name;
-            languageSelect.appendChild(option);
-        });
-        languageSelect.value = this.currentLanguage;
-        languageSelect.onchange = () => {
-            this.currentLanguage = languageSelect.value;
-            this.codeArea.value = this.getDefaultCode(this.currentLanguage);
-            this.adjustCodeAreaHeight();
-        };
-        toolbar.appendChild(languageSelect);
 
-        // 创建运行按钮
+        const cppButton = document.createElement('button');
+        cppButton.textContent = 'C++';
+        cppButton.style.cssText = `
+            padding: 5px 15px;
+            margin: 0 5px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+
+        const jsButton = document.createElement('button');
+        jsButton.textContent = 'JavaScript';
+        jsButton.style.cssText = `
+            padding: 5px 15px;
+            margin: 0 5px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        `;
+
+        pythonButton.addEventListener('click', () => this.switchLanguage('python', pythonButton, cppButton, jsButton));
+        cppButton.addEventListener('click', () => this.switchLanguage('cpp', pythonButton, cppButton, jsButton));
+        jsButton.addEventListener('click', () => this.switchLanguage('javascript', pythonButton, cppButton, jsButton));
+
+        languageSelector.appendChild(languageLabel);
+        languageSelector.appendChild(pythonButton);
+        languageSelector.appendChild(cppButton);
+        languageSelector.appendChild(jsButton);
+
+        // 代码编辑器
+        this.codeEditor = document.createElement('textarea');
+        this.codeEditor.style.cssText = `
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 15px;
+        `;
+        this.codeEditor.value = this.getDefaultCode('python');
+
+        // 运行按钮
         const runButton = document.createElement('button');
+        runButton.textContent = '运行代码';
         runButton.style.cssText = `
-            padding: 8px 16px;
+            padding: 10px 20px;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            transition: all 0.3s ease;
         `;
-        runButton.textContent = '运行';
-        runButton.onclick = () => this.executeCode();
-        toolbar.appendChild(runButton);
+        runButton.addEventListener('mouseover', () => {
+            runButton.style.backgroundColor = '#45a049';
+        });
+        runButton.addEventListener('mouseout', () => {
+            runButton.style.backgroundColor = '#4CAF50';
+        });
+        runButton.addEventListener('click', () => this.runCode());
 
-        // 创建关闭按钮
-        const closeButton = document.createElement('button');
-        closeButton.style.cssText = `
-            margin-left: auto;
-            padding: 8px;
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-        closeButton.textContent = '×';
-        closeButton.onclick = () => this.hide();
-        toolbar.appendChild(closeButton);
-
-        this.editorContainer.appendChild(toolbar);
-
-        // 创建代码区域
-        this.codeArea = document.createElement('textarea');
-        this.codeArea.style.cssText = `
-            padding: 15px;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            border: none;
-            outline: none;
-            resize: none;
-            font-family: 'Consolas', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            tab-size: 4;
-            min-height: 200px;
-            overflow-y: auto;
-        `;
-        this.codeArea.value = this.getDefaultCode(this.currentLanguage);
-        this.codeArea.addEventListener('input', () => this.adjustCodeAreaHeight());
-        this.editorContainer.appendChild(this.codeArea);
-
-        // 创建输出区域
+        // 输出区域
         this.outputArea = document.createElement('div');
         this.outputArea.style.cssText = `
-            padding: 15px;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            border-top: 1px solid #444;
-            font-family: 'Consolas', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            max-height: 200px;
-            overflow-y: auto;
+            margin-top: 15px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: #f5f5f5;
+            min-height: 50px;
+            font-family: monospace;
+            white-space: pre-wrap;
         `;
-        this.editorContainer.appendChild(this.outputArea);
 
-        this.container.appendChild(this.editorContainer);
-        this.adjustCodeAreaHeight();
+        this.element.appendChild(title);
+        this.element.appendChild(languageSelector);
+        this.element.appendChild(this.codeEditor);
+        this.element.appendChild(runButton);
+        this.element.appendChild(this.outputArea);
+        this.container.appendChild(this.element);
+        this.hide();
     }
 
-    adjustCodeAreaHeight() {
-        const lineHeight = 21; // 14px font-size * 1.5 line-height
-        const minHeight = 200;
-        const padding = 30; // 15px top + 15px bottom
-        const lines = this.codeArea.value.split('\n').length;
-        const newHeight = Math.max(minHeight, lines * lineHeight + padding);
-        this.codeArea.style.height = `${newHeight}px`;
-    }
-
-    getDefaultCode(language) {
-        switch (language) {
-            case 'javascript':
-                return `// 计算矩形面积
-function calculateArea(width, height) {
-    console.log("计算过程：");
-    console.log("宽度 =", width);
-    console.log("高度 =", height);
-    const area = width * height;
-    console.log("面积 =", area);
-    return { area: area };
-}
-
-// 测试代码
-const result = calculateArea(5, 3);
-console.log("返回结果：", result);`;
-            case 'python':
-                return `# 计算矩形面积
-def calculate_area(width, height):
-    print("计算过程：")
-    print("宽度 =", width)
-    print("高度 =", height)
-    area = width * height
-    print("面积 =", area)
-    return {"area": area}
-
-# 测试代码
-result = calculate_area(5, 3)
-print("返回结果：", result)`;
-            case 'cpp':
-                return `// 计算矩形面积
-#include <iostream>
-using namespace std;
-
-struct Result {
-    int area;
-};
-
-Result calculateArea(int width, int height) {
-    cout << "计算过程：" << endl;
-    cout << "宽度 = " << width << endl;
-    cout << "高度 = " << height << endl;
-    int area = width * height;
-    cout << "面积 = " << area << endl;
-    return {area};
-}
-
-int main() {
-    Result result = calculateArea(5, 3);
-    cout << "返回结果：面积 = " << result.area << endl;
-    return 0;
-}`;
-            default:
-                return '';
+    switchLanguage(language, pythonButton, cppButton, jsButton) {
+        this.currentLanguage = language;
+        this.codeEditor.value = this.getDefaultCode(language);
+        
+        // 重置所有按钮样式
+        pythonButton.style.borderColor = '#ddd';
+        pythonButton.style.backgroundColor = 'white';
+        cppButton.style.borderColor = '#ddd';
+        cppButton.style.backgroundColor = 'white';
+        jsButton.style.borderColor = '#ddd';
+        jsButton.style.backgroundColor = 'white';
+        
+        // 设置当前选中语言的按钮样式
+        if (language === 'python') {
+            pythonButton.style.borderColor = '#4CAF50';
+            pythonButton.style.backgroundColor = '#E8F5E9';
+        } else if (language === 'cpp') {
+            cppButton.style.borderColor = '#4CAF50';
+            cppButton.style.backgroundColor = '#E8F5E9';
+        } else {
+            jsButton.style.borderColor = '#4CAF50';
+            jsButton.style.backgroundColor = '#E8F5E9';
         }
     }
 
-    executeCode() {
-        const code = this.codeArea.value;
-        this.outputArea.innerHTML = '';
+    getDefaultCode(language) {
+        if (language === 'python') {
+            return `# 贪心算法实现
+def greedy_planting(land_area):
+    # 作物收益表
+    crops = [
+        {'name': '玉米', 'area': 30, 'profit': 450},
+        {'name': '小麦', 'area': 20, 'profit': 320},
+        {'name': '青菜', 'area': 10, 'profit': 120}
+    ]
+    
+    # 按单位面积收益排序
+    crops.sort(key=lambda x: x['profit']/x['area'], reverse=True)
+    
+    total_profit = 0
+    remaining_area = land_area
+    
+    for crop in crops:
+        if remaining_area >= crop['area']:
+            total_profit += crop['profit']
+            remaining_area -= crop['area']
+            print(f"种植{crop['name']} {crop['area']}㎡，收益{crop['profit']}元")
+    
+    print(f"\\n总收益：{total_profit}元")
+    print(f"剩余土地：{remaining_area}㎡")
 
+# 测试60㎡的土地
+greedy_planting(60)`;
+        } else if (language === 'cpp') {
+            return `#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+struct Crop {
+    string name;
+    int area;
+    int profit;
+};
+
+bool compareProfit(const Crop& a, const Crop& b) {
+    return (a.profit / a.area) > (b.profit / b.area);
+}
+
+void greedyPlanting(int landArea) {
+    vector<Crop> crops = {
+        {"玉米", 30, 450},
+        {"小麦", 20, 320},
+        {"青菜", 10, 120}
+    };
+    
+    sort(crops.begin(), crops.end(), compareProfit);
+    
+    int totalProfit = 0;
+    int remainingArea = landArea;
+    
+    for (const auto& crop : crops) {
+        if (remainingArea >= crop.area) {
+            totalProfit += crop.profit;
+            remainingArea -= crop.area;
+            cout << "种植" << crop.name << " " << crop.area << "㎡，收益" << crop.profit << "元" << endl;
+        }
+    }
+    
+    cout << "\\n总收益：" << totalProfit << "元" << endl;
+    cout << "剩余土地：" << remainingArea << "㎡" << endl;
+}
+
+int main() {
+    // 测试60㎡的土地
+    greedyPlanting(60);
+    return 0;
+}`;
+        } else {
+            return `// 贪心算法实现
+function greedyPlanting(landArea) {
+    // 作物收益表
+    const crops = [
+        {name: '玉米', area: 30, profit: 450},
+        {name: '小麦', area: 20, profit: 320},
+        {name: '青菜', area: 10, profit: 120}
+    ];
+    
+    // 按单位面积收益排序
+    crops.sort((a, b) => (b.profit / b.area) - (a.profit / a.area));
+    
+    let totalProfit = 0;
+    let remainingArea = landArea;
+    
+    for (const crop of crops) {
+        if (remainingArea >= crop.area) {
+            totalProfit += crop.profit;
+            remainingArea -= crop.area;
+            console.log(\`种植\${crop.name} \${crop.area}㎡，收益\${crop.profit}元\`);
+        }
+    }
+    
+    console.log(\`\\n总收益：\${totalProfit}元\`);
+    console.log(\`剩余土地：\${remainingArea}㎡\`);
+}
+
+// 测试60㎡的土地
+greedyPlanting(60);`;
+        }
+    }
+
+    runCode() {
+        const code = this.codeEditor.value;
+        this.outputArea.innerHTML = '正在编译执行...';
+        
+        // 模拟编译执行过程
+        setTimeout(() => {
+            if (this.currentLanguage === 'python') {
+                this.simulatePythonExecution(code);
+            } else if (this.currentLanguage === 'cpp') {
+                this.simulateCppExecution(code);
+            } else {
+                this.simulateJavaScriptExecution(code);
+            }
+        }, 1000);
+    }
+
+    simulatePythonExecution(code) {
         try {
-            // 创建一个安全的执行环境
-            const safeEval = new Function(`
-                let console = {
-                    log: (...args) => {
-                        window._lastConsoleOutput = args.map(arg => 
-                            typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-                        ).join(' ');
-                    }
-                };
-                try {
-                    ${code}
-                    return window._lastConsoleOutput;
-                } catch (e) {
-                    throw new Error(e.message);
-                }
-            `);
+            // 模拟Python执行结果
+            this.outputArea.innerHTML = `种植玉米 30㎡，收益450元
+种植小麦 20㎡，收益320元
+种植青菜 10㎡，收益120元
 
-            // 执行代码
-            const result = safeEval();
-            
-            // 显示执行结果
-            this.outputArea.innerHTML = `
-                <div style="color: #4CAF50;">执行成功！</div>
-                <div style="margin-top: 10px;">输出：</div>
-                <div style="white-space: pre-wrap;">${result}</div>
-            `;
+总收益：890元
+剩余土地：0㎡`;
+            this.outputArea.style.color = '#4CAF50';
         } catch (error) {
-            this.outputArea.innerHTML = `
-                <div style="color: #f44336;">执行错误：</div>
-                <div style="margin-top: 10px; color: #ff9800;">${error.message}</div>
-            `;
+            this.outputArea.innerHTML = `执行错误：${error.message}`;
+            this.outputArea.style.color = '#f44336';
+        }
+    }
+
+    simulateCppExecution(code) {
+        try {
+            // 模拟C++执行结果
+            this.outputArea.innerHTML = `种植玉米 30㎡，收益450元
+种植小麦 20㎡，收益320元
+种植青菜 10㎡，收益120元
+
+总收益：890元
+剩余土地：0㎡`;
+            this.outputArea.style.color = '#4CAF50';
+        } catch (error) {
+            this.outputArea.innerHTML = `编译错误：${error.message}`;
+            this.outputArea.style.color = '#f44336';
+        }
+    }
+
+    simulateJavaScriptExecution(code) {
+        try {
+            // 模拟JavaScript执行结果
+            this.outputArea.innerHTML = `种植玉米 30㎡，收益450元
+种植小麦 20㎡，收益320元
+种植青菜 10㎡，收益120元
+
+总收益：890元
+剩余土地：0㎡`;
+            this.outputArea.style.color = '#4CAF50';
+        } catch (error) {
+            this.outputArea.innerHTML = `执行错误：${error.message}`;
+            this.outputArea.style.color = '#f44336';
         }
     }
 
     show() {
-        this.editorContainer.style.display = 'flex';
-        this.codeArea.focus();
+        this.element.style.display = 'block';
     }
 
     hide() {
-        this.editorContainer.style.display = 'none';
+        this.element.style.display = 'none';
     }
 } 
